@@ -4,14 +4,28 @@ package chittychat;
 option go_package = "./disysminiproject2"; 
 
 service ChittyChat {
-    rpc Publish (Message) returns (Message) {}
-    rpc Broadcast (Message) returns (Message) {}
-
+    rpc Publish (MessageWithLamport) returns (MessageWithLamport) {}
+    rpc Broadcast (MessageWithLamport) returns (BroadcastReply) {}
+    //måske join? 
+    //måske leave? 
 }
 
 message Message {
     string Message = 1; 
 }
 
+message Lamport {
+    int32 Counter = 1; 
+}
+
+message MessageWithLamport {
+    Message message = 1; 
+    Lamport time = 2; 
+}
+
+message BroadcastReply {}
+
+
 //compile kommando 
+//skal køres når vi har ændret denne fil 
 //protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative chittychat.proto 

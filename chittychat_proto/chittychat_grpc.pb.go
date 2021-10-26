@@ -18,8 +18,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ChittyChatClient interface {
-	Publish(ctx context.Context, in *Message, opts ...grpc.CallOption) (*Message, error)
-	Broadcast(ctx context.Context, in *Message, opts ...grpc.CallOption) (*Message, error)
+	Publish(ctx context.Context, in *MessageWithLamport, opts ...grpc.CallOption) (*MessageWithLamport, error)
+	Broadcast(ctx context.Context, in *MessageWithLamport, opts ...grpc.CallOption) (*BroadcastReply, error)
 }
 
 type chittyChatClient struct {
@@ -30,8 +30,8 @@ func NewChittyChatClient(cc grpc.ClientConnInterface) ChittyChatClient {
 	return &chittyChatClient{cc}
 }
 
-func (c *chittyChatClient) Publish(ctx context.Context, in *Message, opts ...grpc.CallOption) (*Message, error) {
-	out := new(Message)
+func (c *chittyChatClient) Publish(ctx context.Context, in *MessageWithLamport, opts ...grpc.CallOption) (*MessageWithLamport, error) {
+	out := new(MessageWithLamport)
 	err := c.cc.Invoke(ctx, "/chittychat.ChittyChat/Publish", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -39,8 +39,8 @@ func (c *chittyChatClient) Publish(ctx context.Context, in *Message, opts ...grp
 	return out, nil
 }
 
-func (c *chittyChatClient) Broadcast(ctx context.Context, in *Message, opts ...grpc.CallOption) (*Message, error) {
-	out := new(Message)
+func (c *chittyChatClient) Broadcast(ctx context.Context, in *MessageWithLamport, opts ...grpc.CallOption) (*BroadcastReply, error) {
+	out := new(BroadcastReply)
 	err := c.cc.Invoke(ctx, "/chittychat.ChittyChat/Broadcast", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -52,8 +52,8 @@ func (c *chittyChatClient) Broadcast(ctx context.Context, in *Message, opts ...g
 // All implementations must embed UnimplementedChittyChatServer
 // for forward compatibility
 type ChittyChatServer interface {
-	Publish(context.Context, *Message) (*Message, error)
-	Broadcast(context.Context, *Message) (*Message, error)
+	Publish(context.Context, *MessageWithLamport) (*MessageWithLamport, error)
+	Broadcast(context.Context, *MessageWithLamport) (*BroadcastReply, error)
 	mustEmbedUnimplementedChittyChatServer()
 }
 
@@ -61,10 +61,10 @@ type ChittyChatServer interface {
 type UnimplementedChittyChatServer struct {
 }
 
-func (UnimplementedChittyChatServer) Publish(context.Context, *Message) (*Message, error) {
+func (UnimplementedChittyChatServer) Publish(context.Context, *MessageWithLamport) (*MessageWithLamport, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Publish not implemented")
 }
-func (UnimplementedChittyChatServer) Broadcast(context.Context, *Message) (*Message, error) {
+func (UnimplementedChittyChatServer) Broadcast(context.Context, *MessageWithLamport) (*BroadcastReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Broadcast not implemented")
 }
 func (UnimplementedChittyChatServer) mustEmbedUnimplementedChittyChatServer() {}
@@ -81,7 +81,7 @@ func RegisterChittyChatServer(s grpc.ServiceRegistrar, srv ChittyChatServer) {
 }
 
 func _ChittyChat_Publish_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Message)
+	in := new(MessageWithLamport)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -93,13 +93,13 @@ func _ChittyChat_Publish_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: "/chittychat.ChittyChat/Publish",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChittyChatServer).Publish(ctx, req.(*Message))
+		return srv.(ChittyChatServer).Publish(ctx, req.(*MessageWithLamport))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _ChittyChat_Broadcast_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Message)
+	in := new(MessageWithLamport)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func _ChittyChat_Broadcast_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: "/chittychat.ChittyChat/Broadcast",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChittyChatServer).Broadcast(ctx, req.(*Message))
+		return srv.(ChittyChatServer).Broadcast(ctx, req.(*MessageWithLamport))
 	}
 	return interceptor(ctx, in, info, handler)
 }
