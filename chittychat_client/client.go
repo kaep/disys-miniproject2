@@ -7,7 +7,8 @@ import (
 	"google.golang.org/grpc"
 )
 
-//der skal selvfølgelig laves noget lamport-dreng
+//counter til brug i lamport
+var counter int = 0
 
 func main() {
 	var conn *grpc.ClientConn
@@ -19,14 +20,20 @@ func main() {
 	//close connection after function return
 	defer conn.Close()
 
-	//create the client with the connection
-	c := pb.NewChittyChatClient(conn)
+	//new context
+	//ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	//defer cancel()
 
-	Publish(c)
+	//create the client with the connection
+	//client := pb.NewChittyChatClient(conn)
+	//client.Publish(ctx, )
+	//publish message, compiler happy
+	//Publish(client)
 }
 
 func Publish(c pb.ChittyChatClient) {
-	//create the message to publish
-	message := pb.Message{}
 
 }
+
+//klient implementation af broadcast skal være
+//at skrive besked og timestamp til log?
