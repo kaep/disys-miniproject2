@@ -14,15 +14,43 @@ const (
 	port = ":8080"
 )
 
+var counter = 0
+var clients = make([]pb.ChittyChatClient, 5) //starter i 5, vokser måske?
+
 type Server struct {
 	pb.UnimplementedChittyChatServer
 }
 
-func (s *Server) Publish(ctx context.Context, in *pb.Message) (*pb.Message, error) {
+//server start, tid = 0
+//klient jointer, tid = 0
+//klient.publish() (tid+1)
+//server: hey, 1 er større end 0, tid = 1
+//server: broadcast(tid+1 = 2)
+//klient: hey, 2 er større end min 1
+
+func (s *Server) Publish(ctx context.Context, in *pb.MessageWithLamport) (*pb.MessageWithLamport, error) {
 	//logik her
 	fmt.Println("Publish kaldt på serveren")
 	log.Println("Publish")
-	return &pb.Message{Message: "10hi"}, nil
+	return &pb.MessageWithLamport{Message: &pb.Message{Message: "10hi"}, Time: &pb.Lamport{Counter: int32(54)}}, nil
+}
+
+func (s *Server) Broadcast(ctx context.Context, in *pb.MessageWithLamport) (*pb.BroadcastReply, error) {
+	//husk logging
+
+	//bestem om eget timestamp er større end den der kommer ind
+	var timeToReport int
+	if counter > int(in.Time.Counter) {
+		timeToReport = counter
+	} else if counter < int(in.Time.Counter) {
+		timeToReport = int(in.Time.Counter)
+	}
+	var message = &pb.MessageWithLamport{Message: in.GetMessage(), Time: &pb.Lamport{Counter: int32(timeToReport)}}
+	//for alle klient in klienter: broadcast(besked, timestamp)
+	for i := 0; i < len(clients); i++ {
+		clients[i].Broadcast(ctx, message)
+	}
+	return &pb.BroadcastReply{}, nil
 }
 
 func main() {
