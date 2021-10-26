@@ -6,6 +6,7 @@ option go_package = "./disysminiproject2";
 service ChittyChat {
     rpc Publish (MessageWithLamport) returns (MessageWithLamport) {}
     rpc Broadcast (MessageWithLamport) returns (BroadcastReply) {}
+    rpc RecieveBroadcastClient (MessageWithLamport) returns (BroadcastReply) {}
     //måske join? 
     //måske leave? 
 }
