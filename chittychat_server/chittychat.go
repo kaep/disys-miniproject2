@@ -53,7 +53,7 @@ func (s *Server) Broadcast(ctx context.Context, in *pb.MessageWithLamport) (*pb.
 	var message = &pb.MessageWithLamport{Message: in.GetMessage(), Time: &pb.Lamport{Counter: int32(timeToReport)}}
 	//for alle klienter i klienter: broadcast(besked, timestamp)
 	for i := 0; i < len(clients); i++ {
-		//clients[i].Broadcast(ctx, message) DET her kommer vel ikke til at virke?det skal være en anden metode i client
+		//clients[i].RecieveBroadcastClient(ctx, message) skal kaldes når klienter har registreret sig
 		fmt.Println(message) //det her er bare proof of concept
 	}
 	//fmt.Println("Hyggehejsa, der er kaldt boradcast") <--- proof of concept
