@@ -48,10 +48,12 @@ func (s *Server) Broadcast(ctx context.Context, in *pb.MessageWithLamport) (*pb.
 	} else if counter < int(in.Time.Counter) {
 		timeToReport = int(in.Time.Counter)
 	}
+	//hvad hvis de er lige store
+
 	var message = &pb.MessageWithLamport{Message: in.GetMessage(), Time: &pb.Lamport{Counter: int32(timeToReport)}}
 	//for alle klienter i klienter: broadcast(besked, timestamp)
 	for i := 0; i < len(clients); i++ {
-		//clients[i].Broadcast(ctx, message) DET HER SKAL BRUGES NÅR VI HAR FORMÅET AT REGISTRERE KLIENTER
+		//clients[i].Broadcast(ctx, message) DET her kommer vel ikke til at virke?det skal være en anden metode i client
 		fmt.Println(message) //det her er bare proof of concept
 	}
 	//fmt.Println("Hyggehejsa, der er kaldt boradcast") <--- proof of concept

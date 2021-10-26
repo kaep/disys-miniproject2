@@ -35,9 +35,6 @@ func main() {
 	client.Publish(ctx, message)
 }
 
-func Publish(c pb.ChittyChatClient) {
-
-}
-
-//klient implementation af broadcast skal være
+//klient implementation af "broadcast" skal være
 //at skrive besked og timestamp til log?
+//
