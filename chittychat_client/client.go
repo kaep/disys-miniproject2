@@ -35,6 +35,7 @@ func main() {
 	client.Publish(ctx, message)
 }
 
-//klient implementation af "broadcast" skal være
-//at skrive besked og timestamp til log?
-//
+func RecieveBroadcastClient(ctx context.Context, in *pb.MessageWithLamport) {
+	//denne metode skal kaldes fra server, når der broadcastes?
+	log.Printf("%v %v", in.GetMessage(), in.GetTime())
+}
