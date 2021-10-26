@@ -29,9 +29,12 @@ type Server struct {
 //klient: hey, 2 er større end min 1
 
 func (s *Server) Publish(ctx context.Context, in *pb.MessageWithLamport) (*pb.MessageWithLamport, error) {
-	//logik her
-	fmt.Println("Publish kaldt på serveren")
-	log.Println("Publish")
+	fmt.Printf("Publish kaldt på serveren: %v %v", in.GetMessage(), in.GetTime())
+	fmt.Println()
+	//log.Println("Publish")
+
+	//denne skal jo så kalde broadcast?
+	s.Broadcast(ctx, in)
 	return &pb.MessageWithLamport{Message: &pb.Message{Message: "10hi"}, Time: &pb.Lamport{Counter: int32(54)}}, nil
 }
 
@@ -46,13 +49,16 @@ func (s *Server) Broadcast(ctx context.Context, in *pb.MessageWithLamport) (*pb.
 		timeToReport = int(in.Time.Counter)
 	}
 	var message = &pb.MessageWithLamport{Message: in.GetMessage(), Time: &pb.Lamport{Counter: int32(timeToReport)}}
-	//for alle klient in klienter: broadcast(besked, timestamp)
+	//for alle klienter i klienter: broadcast(besked, timestamp)
 	for i := 0; i < len(clients); i++ {
-		clients[i].Broadcast(ctx, message)
+		//clients[i].Broadcast(ctx, message) DET HER SKAL BRUGES NÅR VI HAR FORMÅET AT REGISTRERE KLIENTER
+		fmt.Println(message) //det her er bare proof of concept
 	}
+	//fmt.Println("Hyggehejsa, der er kaldt boradcast") <--- proof of concept
 	return &pb.BroadcastReply{}, nil
 }
 
+//start og lyt :)
 func main() {
 	listen, err := net.Listen("tcp", port)
 	if err != nil {
