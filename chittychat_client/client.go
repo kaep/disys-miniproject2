@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"log"
 	pb "mp2/chittychat_proto"
+	"time"
 
 	"google.golang.org/grpc"
 )
@@ -21,14 +23,16 @@ func main() {
 	defer conn.Close()
 
 	//new context
-	//ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	//defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
 
 	//create the client with the connection
-	//client := pb.NewChittyChatClient(conn)
+	client := pb.NewChittyChatClient(conn)
 	//client.Publish(ctx, )
 	//publish message, compiler happy
 	//Publish(client)
+	var message = &pb.MessageWithLamport{Message: &pb.Message{Message: string("Hey bro")}, Time: &pb.Lamport{Counter: int32(42)}}
+	client.Publish(ctx, message)
 }
 
 func Publish(c pb.ChittyChatClient) {
