@@ -28,14 +28,21 @@ type Server struct {
 //server: broadcast(tid+1 = 2)
 //klient: hey, 2 er større end min 1
 
-func (s *Server) Publish(ctx context.Context, in *pb.MessageWithLamport) (*pb.MessageWithLamport, error) {
-	fmt.Printf("Publish kaldt på serveren: %v %v", in.GetMessage(), in.GetTime())
-	fmt.Println()
-	//log.Println("Publish")
-
-	//denne skal jo så kalde broadcast?
-	s.Broadcast(ctx, in)
-	return &pb.MessageWithLamport{Message: &pb.Message{Message: "10hi"}, Time: &pb.Lamport{Counter: int32(54)}}, nil
+//start og lyt :)
+func main() {
+	listen, err := net.Listen("tcp", port)
+	if err != nil {
+		log.Fatalf("Failed to listen on port %v, %v", port, err)
+		log.Println()
+	}
+	server := grpc.NewServer()
+	pb.RegisterChittyChatServer(server, &Server{})
+	log.Printf("Server listening at %v", listen.Addr())
+	log.Println()
+	if err := server.Serve(listen); err != nil {
+		log.Printf("Failed to serve: %v", err)
+		log.Println() //overvej at droppe tomme linjer
+	}
 }
 
 func (s *Server) Broadcast(ctx context.Context, in *pb.MessageWithLamport) (*pb.BroadcastReply, error) {
@@ -60,19 +67,21 @@ func (s *Server) Broadcast(ctx context.Context, in *pb.MessageWithLamport) (*pb.
 	return &pb.BroadcastReply{}, nil
 }
 
-//start og lyt :)
-func main() {
-	listen, err := net.Listen("tcp", port)
-	if err != nil {
-		log.Fatalf("Failed to listen on port %v, %v", port, err)
-		log.Println()
-	}
-	server := grpc.NewServer()
-	pb.RegisterChittyChatServer(server, &Server{})
-	log.Printf("Server listening at %v", listen.Addr())
-	log.Println()
-	if err := server.Serve(listen); err != nil {
-		log.Printf("Failed to serve: %v", err)
-		log.Println() //overvej at droppe tomme linjer
-	}
+func (s *Server) Publish(ctx context.Context, in *pb.MessageWithLamport) (*pb.MessageWithLamport, error) {
+	fmt.Printf("Publish kaldt på serveren: %v %v", in.GetMessage(), in.GetTime())
+	fmt.Println()
+	//log.Println("Publish")
+
+	//denne skal jo så kalde broadcast?
+	s.Broadcast(ctx, in)
+
+	//er returværdien her unødvendig?
+	return &pb.MessageWithLamport{Message: &pb.Message{Message: "10hi"}, Time: &pb.Lamport{Counter: int32(54)}}, nil
+}
+
+func (s *Server) RegisterClient(ctx context.Context, c *pb.Client) (*pb.RegisterReply, error) {
+
+	//clients = append(clients, )
+
+	return &pb.RegisterReply{}, nil
 }

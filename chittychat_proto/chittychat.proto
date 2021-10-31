@@ -7,6 +7,7 @@ service ChittyChat {
     rpc Publish (MessageWithLamport) returns (MessageWithLamport) {}
     rpc Broadcast (MessageWithLamport) returns (BroadcastReply) {}
     rpc RecieveBroadcastClient (MessageWithLamport) returns (BroadcastReply) {}
+    rpc RegisterClient (Client) returns (RegisterReply) {}
     //måske join? 
     //måske leave? 
 }
@@ -25,6 +26,9 @@ message MessageWithLamport {
 }
 
 message BroadcastReply {}
+
+message Client {}
+message RegisterReply {}
 
 
 //compile kommando 

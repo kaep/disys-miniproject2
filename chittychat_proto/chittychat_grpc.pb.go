@@ -21,6 +21,7 @@ type ChittyChatClient interface {
 	Publish(ctx context.Context, in *MessageWithLamport, opts ...grpc.CallOption) (*MessageWithLamport, error)
 	Broadcast(ctx context.Context, in *MessageWithLamport, opts ...grpc.CallOption) (*BroadcastReply, error)
 	RecieveBroadcastClient(ctx context.Context, in *MessageWithLamport, opts ...grpc.CallOption) (*BroadcastReply, error)
+	RegisterClient(ctx context.Context, in *Client, opts ...grpc.CallOption) (*RegisterReply, error)
 }
 
 type chittyChatClient struct {
@@ -58,6 +59,15 @@ func (c *chittyChatClient) RecieveBroadcastClient(ctx context.Context, in *Messa
 	return out, nil
 }
 
+func (c *chittyChatClient) RegisterClient(ctx context.Context, in *Client, opts ...grpc.CallOption) (*RegisterReply, error) {
+	out := new(RegisterReply)
+	err := c.cc.Invoke(ctx, "/chittychat.ChittyChat/RegisterClient", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ChittyChatServer is the server API for ChittyChat service.
 // All implementations must embed UnimplementedChittyChatServer
 // for forward compatibility
@@ -65,6 +75,7 @@ type ChittyChatServer interface {
 	Publish(context.Context, *MessageWithLamport) (*MessageWithLamport, error)
 	Broadcast(context.Context, *MessageWithLamport) (*BroadcastReply, error)
 	RecieveBroadcastClient(context.Context, *MessageWithLamport) (*BroadcastReply, error)
+	RegisterClient(context.Context, *Client) (*RegisterReply, error)
 	mustEmbedUnimplementedChittyChatServer()
 }
 
@@ -80,6 +91,9 @@ func (UnimplementedChittyChatServer) Broadcast(context.Context, *MessageWithLamp
 }
 func (UnimplementedChittyChatServer) RecieveBroadcastClient(context.Context, *MessageWithLamport) (*BroadcastReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RecieveBroadcastClient not implemented")
+}
+func (UnimplementedChittyChatServer) RegisterClient(context.Context, *Client) (*RegisterReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RegisterClient not implemented")
 }
 func (UnimplementedChittyChatServer) mustEmbedUnimplementedChittyChatServer() {}
 
@@ -148,6 +162,24 @@ func _ChittyChat_RecieveBroadcastClient_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ChittyChat_RegisterClient_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Client)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChittyChatServer).RegisterClient(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/chittychat.ChittyChat/RegisterClient",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChittyChatServer).RegisterClient(ctx, req.(*Client))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ChittyChat_ServiceDesc is the grpc.ServiceDesc for ChittyChat service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -166,6 +198,10 @@ var ChittyChat_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RecieveBroadcastClient",
 			Handler:    _ChittyChat_RecieveBroadcastClient_Handler,
+		},
+		{
+			MethodName: "RegisterClient",
+			Handler:    _ChittyChat_RegisterClient_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
