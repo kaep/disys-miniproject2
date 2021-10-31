@@ -15,6 +15,13 @@ import (
 var timestamp = 0
 
 func main() {
+	f, erro := os.OpenFile("../Logfile", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	if erro != nil {
+		log.Fatalf("Fejl")
+	}
+	defer f.Close()
+	wrt := io.MultiWriter(os.Stdout, f)
+	log.SetOutput(wrt)
 	var conn *grpc.ClientConn
 	conn, err := grpc.Dial(":8080", grpc.WithInsecure())
 	if err != nil {
@@ -78,4 +85,8 @@ func MaxInt(x int, y int) int {
 		return x
 	}
 	return y
+}
+
+func setupLog() {
+
 }

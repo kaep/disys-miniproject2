@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"io"
 	"log"
 	pb "mp2/chittychat_proto"
 	"net"
+	"os"
 
 	"google.golang.org/grpc"
 )
@@ -29,6 +31,13 @@ type Server struct {
 
 //start og lyt :)
 func main() {
+	f, erro := os.OpenFile("../Logfile", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	if erro != nil {
+		log.Fatalf("Fejl")
+	}
+	defer f.Close()
+	wrt := io.MultiWriter(os.Stdout, f)
+	log.SetOutput(wrt)
 	listen, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalf("Failed to listen on port %v, %v", port, err)
