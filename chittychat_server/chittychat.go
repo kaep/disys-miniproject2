@@ -48,15 +48,13 @@ func (s *Server) EstablishConnection(Empty *pb.Empty, stream pb.ChittyChat_Estab
 	//Add the stream to our stored streams
 	s.clients = append(s.clients, stream)
 
-	//forsøger at holde live i stream
+	//forsøger at holde liv i stream
 	for {
 		select {
 		case <-stream.Context().Done():
 			return nil
 		}
 	}
-
-	//return nil
 }
 
 func (s *Server) Broadcast(ctx context.Context, message *pb.MessageWithLamport) (*pb.Empty, error) {
@@ -64,7 +62,7 @@ func (s *Server) Broadcast(ctx context.Context, message *pb.MessageWithLamport) 
 	for i := 0; i < len(s.clients); i++ {
 		err := s.clients[i].Send(message)
 		if err != nil {
-			log.Printf("pikkemand %v", err)
+			log.Print(err)
 		}
 	}
 
