@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	pb "mp2/chittychat_proto"
 	"net"
@@ -49,14 +48,23 @@ func (s *Server) EstablishConnection(Empty *pb.Empty, stream pb.ChittyChat_Estab
 	//Add the stream to our stored streams
 	s.clients = append(s.clients, stream)
 
-	return nil
+	//forsøger at holde live i stream
+	for {
+		select {
+		case <-stream.Context().Done():
+			return nil
+		}
+	}
+
+	//return nil
 }
 
 func (s *Server) Broadcast(ctx context.Context, message *pb.MessageWithLamport) (*pb.Empty, error) {
+	log.Printf("Broadcast kaldt på serveren med timestamp: %v", timestamp)
 	for i := 0; i < len(s.clients); i++ {
-		err := s.clients[i].SendMsg(message)
+		err := s.clients[i].Send(message)
 		if err != nil {
-			log.Print(err)
+			log.Printf("pikkemand %v", err)
 		}
 	}
 
@@ -65,19 +73,22 @@ func (s *Server) Broadcast(ctx context.Context, message *pb.MessageWithLamport) 
 
 func (s *Server) Publish(ctx context.Context, message *pb.MessageWithLamport) (*pb.Empty, error) {
 	//debugging
-	fmt.Printf("Publish kaldt på serveren: %v %v", message.GetMessage(), message.GetTime())
-	fmt.Println()
-
+	//fmt.Printf("Publish kaldt på serveren: %v %v", message.GetMessage(), message.GetTime())
+	//fmt.Println()
+	log.Printf("Publish kaldt på server med timestamp: %v", message.GetTime().Counter)
 	//update timestamp
 	timestamp = MaxInt(timestamp, int(message.GetTime().Counter))
+	log.Printf("Serverens timestamp opdateret til: %v", timestamp)
 	//increment timestamp (modtagelse)
 	timestamp++
+	log.Printf("Serverens timestamp incrementet til %v pga. modtagelse ", timestamp)
 	//increment timestamp (afsendelse)
 	timestamp++
+	log.Printf("Serverens timestamp incrementet til %v pga. afsendelse", timestamp)
 
 	//TJEK OP PÅ OM TIMESTAMPS OPDATERES KORREKT
 	var newMessage = &pb.MessageWithLamport{Message: &pb.Message{Message: message.GetMessage().Message}, Time: &pb.Lamport{Counter: int32(timestamp)}}
-
+	//log.Printf("Publish kaldt på serveren %v", newMessage.GetTime())
 	s.Broadcast(ctx, newMessage)
 	return &pb.Empty{}, nil
 }
