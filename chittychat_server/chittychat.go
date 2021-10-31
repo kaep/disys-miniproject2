@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"log"
 	pb "mp2/chittychat_proto"
 	"net"
@@ -12,11 +13,13 @@ const (
 	port = ":8080"
 )
 
-var counter = 0
-var clients = make([]pb.ChittyChatClient, 5) //starter i 5, vokser måske?
+//var counter = 0
+//var clients = make([]pb.ChittyChatClient, 5) //starter i 5, vokser måske?
 
 type Server struct {
 	pb.UnimplementedChittyChatServer
+	counter int
+	clients []pb.ChittyChatClient
 }
 
 //server start, tid = 0
@@ -41,4 +44,44 @@ func main() {
 		log.Printf("Failed to serve: %v", err)
 		log.Println() //overvej at droppe tomme linjer
 	}
+}
+
+/*
+func (s *Server) EstablishConnection(stream pb.ChittyChat_EstablishConnectionServer) error {
+	for {
+		select {
+		case <-stream.Context().Done():
+			return nil
+		case <-stream.
+
+
+		}
+	}
+}*/
+
+//a client-side streaming method
+func (s *Server) Publish(stream pb.ChittyChat_PublishServer) error {
+	message, err := stream.Recv()
+	if err == io.EOF {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	//check & update lamport
+	s.counter = MaxInt(s.counter, int(message.GetTime().Counter))
+
+	return nil
+}
+
+func (s *Server) Broadcast(stream pb.ChittyChat_BroadcastServer) error {
+
+}
+
+//helper function
+func MaxInt(x int, y int) int {
+	if x > y {
+		return x
+	}
+	return y
 }

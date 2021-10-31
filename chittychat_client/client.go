@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	pb "mp2/chittychat_proto"
-	"time"
 
 	"google.golang.org/grpc"
 )
@@ -23,7 +22,7 @@ func main() {
 	defer conn.Close()
 
 	//new context
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.Background()
 	defer cancel()
 
 	//create the client with the connection
