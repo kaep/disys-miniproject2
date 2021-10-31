@@ -14,12 +14,10 @@ const (
 	port = ":8080"
 )
 
-//var counter = 0
-//var clients = make([]pb.ChittyChatClient, 5) //starter i 5, vokser måske?
+var timestamp = 0
 
 type Server struct {
 	pb.UnimplementedChittyChatServer
-	counter int
 	clients []pb.ChittyChat_EstablishConnectionServer
 }
 
@@ -68,8 +66,19 @@ func (s *Server) Broadcast(ctx context.Context, message *pb.MessageWithLamport) 
 func (s *Server) Publish(ctx context.Context, message *pb.MessageWithLamport) (*pb.Empty, error) {
 	//debugging
 	fmt.Printf("Publish kaldt på serveren: %v %v", message.GetMessage(), message.GetTime())
+	fmt.Println()
 
-	s.Broadcast(ctx, message)
+	//update timestamp
+	timestamp = MaxInt(timestamp, int(message.GetTime().Counter))
+	//increment timestamp (modtagelse)
+	timestamp++
+	//increment timestamp (afsendelse)
+	timestamp++
+
+	//TJEK OP PÅ OM TIMESTAMPS OPDATERES KORREKT
+	var newMessage = &pb.MessageWithLamport{Message: &pb.Message{Message: message.GetMessage().Message}, Time: &pb.Lamport{Counter: int32(timestamp)}}
+
+	s.Broadcast(ctx, newMessage)
 	return &pb.Empty{}, nil
 }
 

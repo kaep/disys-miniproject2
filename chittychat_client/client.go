@@ -10,8 +10,8 @@ import (
 	"google.golang.org/grpc"
 )
 
-//counter til brug i lamport timestamp
-var counter int = 0
+//timestamp til brug i lamport timestamp
+var timestamp = 0
 
 func main() {
 	var conn *grpc.ClientConn
@@ -37,12 +37,25 @@ func main() {
 }
 
 func RecieveBroadcast(message *pb.MessageWithLamport) pb.Empty {
-	log.Printf("%v %v", message.GetMessage(), message.GetTime())
+	//log
+	log.Printf("Recieved broadcast: %v %v", message.GetMessage(), message.GetTime())
+
+	//update timestamp
+	timestamp = MaxInt(timestamp, int(message.GetTime().Counter))
 
 	return pb.Empty{}
 }
 
 func Publish(ctx context.Context, client pb.ChittyChatClient, message string) {
-	var lamportMessage = &pb.MessageWithLamport{Message: &pb.Message{Message: message}, Time: &pb.Lamport{Counter: int32(counter)}}
+	timestamp++
+	var lamportMessage = &pb.MessageWithLamport{Message: &pb.Message{Message: message}, Time: &pb.Lamport{Counter: int32(timestamp)}}
 	client.Publish(ctx, lamportMessage)
+}
+
+//helper function
+func MaxInt(x int, y int) int {
+	if x > y {
+		return x
+	}
+	return y
 }
