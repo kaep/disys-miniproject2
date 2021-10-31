@@ -1,7 +1,8 @@
 package main
 
 import (
-	"io"
+	"context"
+	"fmt"
 	"log"
 	pb "mp2/chittychat_proto"
 	"net"
@@ -19,7 +20,7 @@ const (
 type Server struct {
 	pb.UnimplementedChittyChatServer
 	counter int
-	clients []pb.ChittyChatClient
+	clients []pb.ChittyChat_EstablishConnectionServer
 }
 
 //server start, tid = 0
@@ -46,36 +47,30 @@ func main() {
 	}
 }
 
-/*
-func (s *Server) EstablishConnection(stream pb.ChittyChat_EstablishConnectionServer) error {
-	for {
-		select {
-		case <-stream.Context().Done():
-			return nil
-		case <-stream.
-
-
-		}
-	}
-}*/
-
-//a client-side streaming method
-func (s *Server) Publish(stream pb.ChittyChat_PublishServer) error {
-	message, err := stream.Recv()
-	if err == io.EOF {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	//check & update lamport
-	s.counter = MaxInt(s.counter, int(message.GetTime().Counter))
+func (s *Server) EstablishConnection(Empty *pb.Empty, stream pb.ChittyChat_EstablishConnectionServer) error {
+	//Add the stream to our stored streams
+	s.clients = append(s.clients, stream)
 
 	return nil
 }
 
-func (s *Server) Broadcast(stream pb.ChittyChat_BroadcastServer) error {
+func (s *Server) Broadcast(ctx context.Context, message *pb.MessageWithLamport) (*pb.Empty, error) {
+	for i := 0; i < len(s.clients); i++ {
+		err := s.clients[i].SendMsg(message)
+		if err != nil {
+			log.Print(err)
+		}
+	}
 
+	return &pb.Empty{}, nil
+}
+
+func (s *Server) Publish(ctx context.Context, message *pb.MessageWithLamport) (*pb.Empty, error) {
+	//debugging
+	fmt.Printf("Publish kaldt på serveren: %v %v", message.GetMessage(), message.GetTime())
+
+	s.Broadcast(ctx, message)
+	return &pb.Empty{}, nil
 }
 
 //helper function
