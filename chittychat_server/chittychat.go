@@ -79,9 +79,24 @@ func (s *Server) Publish(ctx context.Context, in *pb.MessageWithLamport) (*pb.Me
 	return &pb.MessageWithLamport{Message: &pb.Message{Message: "10hi"}, Time: &pb.Lamport{Counter: int32(54)}}, nil
 }
 
-func (s *Server) RegisterClient(ctx context.Context, c *pb.Client) (*pb.RegisterReply, error) {
+func (s *Server) RegisterClient(emptyClient *pb.Client, stream pb.ChittyChat_RegisterClientServer) error {
+
+	for {
+		select {
+		case <-stream.Context().Done():
+			return nil
+			stream.Send(&pb.MessageWithLamport{})
+		}
+	}
+}
+
+/*
+func (s *Server) RegisterClient(*pb.Client) (* error) {
 
 	//clients = append(clients, )
+	for {
+		in, err := stream.Recv()
+	}
 
 	return &pb.RegisterReply{}, nil
-}
+}*/

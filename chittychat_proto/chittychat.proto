@@ -4,10 +4,10 @@ package chittychat;
 option go_package = "./disysminiproject2"; 
 
 service ChittyChat {
-    rpc Publish (MessageWithLamport) returns (MessageWithLamport) {}
+    rpc Publish (stream MessageWithLamport) returns (MessageWithLamport) {}
     rpc Broadcast (MessageWithLamport) returns (BroadcastReply) {}
     rpc RecieveBroadcastClient (MessageWithLamport) returns (BroadcastReply) {}
-    rpc RegisterClient (Client) returns (RegisterReply) {}
+    rpc RegisterClient (Client) returns (stream MessageWithLamport) {}
     //måske join? 
     //måske leave? 
 }
