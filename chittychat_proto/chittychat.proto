@@ -8,6 +8,7 @@ service ChittyChat {
     rpc Broadcast (MessageWithLamport) returns (Empty) {}
     rpc EstablishConnection (Empty) returns (stream MessageWithLamport) {}
     rpc RecieveBroadcast (MessageWithLamport) returns (Empty) {}
+    rpc Leave (Empty) returns (Empty) {}
 
    
 }
