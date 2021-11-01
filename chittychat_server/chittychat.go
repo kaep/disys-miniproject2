@@ -23,14 +23,6 @@ type Server struct {
 	clients []pb.ChittyChat_EstablishConnectionServer
 }
 
-//server start, tid = 0
-//klient jointer, tid = 0
-//klient.publish() (tid+1)
-//server: hey, 1 er større end 0, tid = 1
-//server: broadcast(tid+1 = 2)
-//klient: hey, 2 er større end min 1
-
-//start og lyt :)
 func main() {
 	os.Remove("../Logfile") //Delete the file to ensure a fresh log for every session
 	f, erro := os.OpenFile("../Logfile", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
@@ -72,6 +64,7 @@ func (s *Server) Broadcast(ctx context.Context, message *pb.MessageWithLamport) 
 	log.Printf("Broadcast kaldt på serveren med timestamp: %v", timestamp)
 	for i := 0; i < len(s.clients); i++ {
 		err := s.clients[i].Send(message)
+
 		if err != nil {
 			log.Print(err)
 			//atm an error is logged everytime the server tries to broadcast to a client that has left -> make a leave method
