@@ -14,6 +14,7 @@ import (
 
 //timestamp til brug i lamport timestamp
 var timestamp = 0
+var name string
 
 func main() {
 	f, erro := os.OpenFile("../Logfile", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
@@ -57,8 +58,13 @@ func main() {
 	}()
 	fmt.Println("---------------")
 	fmt.Println("Welcome to ChittyChat")
+	fmt.Println("Please enter your name")
 	fmt.Println("---------------")
 	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	name = scanner.Text()
+	fmt.Printf("You chose the name: %v", name)
+	fmt.Println()
 	for scanner.Scan() {
 		go Publish(ctx, client, scanner.Text())
 	}
