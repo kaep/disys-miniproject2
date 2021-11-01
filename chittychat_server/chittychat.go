@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	pb "mp2/chittychat_proto"
@@ -31,6 +32,7 @@ type Server struct {
 
 //start og lyt :)
 func main() {
+	os.Remove("../Logfile") //Delete the file to ensure a fresh log for every session
 	f, erro := os.OpenFile("../Logfile", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	if erro != nil {
 		log.Fatalf("Fejl")
@@ -56,7 +58,7 @@ func main() {
 func (s *Server) EstablishConnection(Empty *pb.Empty, stream pb.ChittyChat_EstablishConnectionServer) error {
 	//Add the stream to our stored streams
 	s.clients = append(s.clients, stream)
-
+	fmt.Println("New user joined!") //overvej at smække navne på
 	//forsøger at holde liv i stream
 	for {
 		select {
