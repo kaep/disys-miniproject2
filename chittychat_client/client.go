@@ -65,8 +65,17 @@ func main() {
 	name = scanner.Text()
 	fmt.Printf("You chose the name: %v", name)
 	fmt.Println()
+	fmt.Println("---------------")
+	fmt.Println("To leave the chat service, type '/leave' at any time")
+	fmt.Println("---------------")
 	for scanner.Scan() {
-		go Publish(ctx, client, scanner.Text())
+		if scanner.Text() == "/leave" {
+			//leave kald til grpc
+			fmt.Println("FUCK DIN MOR")
+		} else {
+			go Publish(ctx, client, scanner.Text())
+		}
+
 	}
 
 }
