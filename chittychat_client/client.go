@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"io"
 	"log"
 	pb "mp2/chittychat_proto"
@@ -54,7 +55,9 @@ func main() {
 			RecieveBroadcast(in)
 		}
 	}()
-
+	fmt.Println("---------------")
+	fmt.Println("Welcome to ChittyChat")
+	fmt.Println("---------------")
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		go Publish(ctx, client, scanner.Text())
