@@ -20,7 +20,7 @@ var timestamp = 0
 
 type Server struct {
 	pb.UnimplementedChittyChatServer
-	clients []pb.ChittyChat_EstablishConnectionServer
+	clients []pb.ChittyChat_EstablishConnectionServer //might make sense as a map
 }
 
 func main() {
