@@ -74,6 +74,7 @@ func (s *Server) Broadcast(ctx context.Context, message *pb.MessageWithLamport) 
 		err := s.clients[i].Send(message)
 		if err != nil {
 			log.Print(err)
+			//atm an error is logged everytime the server tries to broadcast to a client that has left -> make a leave method
 		}
 	}
 
