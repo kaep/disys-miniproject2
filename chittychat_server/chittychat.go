@@ -96,6 +96,14 @@ func (s *Server) Publish(ctx context.Context, message *pb.MessageWithLamport) (*
 	return &pb.Empty{}, nil
 }
 
+func (s *Server) Leave(ctx context.Context, empty *pb.Empty) (*pb.Empty, error) {
+	for i := 0; i < len(s.clients); i++ {
+		//her skal klienten fjernes, overvej at lave om på rpc definitionen, så en klients identitet på en måde kan videregives
+	}
+
+	return &pb.Empty{}, nil
+}
+
 //helper function
 func MaxInt(x int, y int) int {
 	if x > y {
