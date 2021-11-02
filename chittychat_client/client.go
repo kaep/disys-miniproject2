@@ -102,7 +102,6 @@ func main() {
 }
 
 func RecieveBroadcast(message *pb.MessageWithLamport) pb.Empty {
-	//log
 	log.Printf("Klient har modtaget broadcast med følgende besked og timestamp: %v %v", message.GetMessage().Message, message.GetTime().Counter)
 	//update timestamp
 	timestamp = MaxInt(timestamp, int(message.GetTime().Counter))

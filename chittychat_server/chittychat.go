@@ -61,7 +61,7 @@ func (s *Server) EstablishConnection(request *pb.ConnectionRequest, stream pb.Ch
 	client.name = request.Name
 	client.stream = stream
 	//Add the stream to our stored streams
-	s.clients = append(s.clients, client) //new way
+	s.clients = append(s.clients, client)
 	fmt.Printf("%v joined!", client.name)
 	var firstMessage = &pb.MessageWithLamport{Message: &pb.Message{Message: "Welcome"}, Time: &pb.Lamport{Counter: int32(timestamp)}, Id: int32(client.id)}
 	stream.Send(firstMessage)
