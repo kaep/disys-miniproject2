@@ -15,6 +15,7 @@ import (
 //timestamp til brug i lamport timestamp
 var timestamp = 0
 var name string
+var id int
 
 func main() {
 	f, erro := os.OpenFile("../Logfile", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
@@ -39,11 +40,22 @@ func main() {
 	//create the client with the connection
 	client := pb.NewChittyChatClient(conn)
 
-	stream, err := client.EstablishConnection(ctx, &pb.Empty{})
+	fmt.Println("---------------")
+	fmt.Println("Welcome to ChittyChat")
+	fmt.Println("Please enter your name")
+	fmt.Println("---------------")
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	name = scanner.Text()
+
+	var request = &pb.ConnectionRequest{Name: name}
+	stream, err := client.EstablishConnection(ctx, request)
+	firstmessage, err := stream.Recv()
+	id = int(firstmessage.GetId())
 	if err != nil {
 		log.Fatalf("Klient linje 35 fejl %v", err)
 	}
-
+	fmt.Printf("JEG HEDDER %v OG MIT ID er %v", name, id)
 	go func() {
 		for {
 			in, err := stream.Recv()
@@ -56,13 +68,6 @@ func main() {
 			RecieveBroadcast(in)
 		}
 	}()
-	fmt.Println("---------------")
-	fmt.Println("Welcome to ChittyChat")
-	fmt.Println("Please enter your name")
-	fmt.Println("---------------")
-	scanner := bufio.NewScanner(os.Stdin)
-	scanner.Scan()
-	name = scanner.Text()
 	fmt.Printf("You chose the name: %v", name)
 	fmt.Println()
 	fmt.Println("---------------")
@@ -70,8 +75,11 @@ func main() {
 	fmt.Println("---------------")
 	for scanner.Scan() {
 		if scanner.Text() == "/leave" {
-			//leave kald til grpc
-			fmt.Println("FUCK DIN MOR")
+			//leave kald til grpc laves her
+			fmt.Println("FUCK DIN MOR, jeg skrider")
+			var request = &pb.LeaveRequest{Id: int32(id)}
+			client.Leave(ctx, request)
+			os.Exit(0)
 		} else {
 			go Publish(ctx, client, scanner.Text())
 		}
@@ -103,8 +111,4 @@ func MaxInt(x int, y int) int {
 		return x
 	}
 	return y
-}
-
-func setupLog() {
-
 }

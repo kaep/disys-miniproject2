@@ -17,10 +17,17 @@ const (
 )
 
 var timestamp = 0
+var idCounter = 0
 
 type Server struct {
 	pb.UnimplementedChittyChatServer
-	clients []pb.ChittyChat_EstablishConnectionServer //might make sense as a map
+	clients []ChatClient
+}
+
+type ChatClient struct {
+	id     int32
+	name   string
+	stream pb.ChittyChat_EstablishConnectionServer
 }
 
 func main() {
@@ -47,10 +54,17 @@ func main() {
 	}
 }
 
-func (s *Server) EstablishConnection(Empty *pb.Empty, stream pb.ChittyChat_EstablishConnectionServer) error {
+func (s *Server) EstablishConnection(request *pb.ConnectionRequest, stream pb.ChittyChat_EstablishConnectionServer) error {
+	var client ChatClient
+	client.id = int32(idCounter)
+	idCounter++
+	client.name = request.Name
+	client.stream = stream
 	//Add the stream to our stored streams
-	s.clients = append(s.clients, stream)
-	fmt.Println("New user joined!") //overvej at smække navne på
+	s.clients = append(s.clients, client) //new way
+	fmt.Printf("%v joined!", client.name)
+	var firstMessage = &pb.MessageWithLamport{Message: &pb.Message{Message: "Welcome"}, Time: &pb.Lamport{Counter: int32(timestamp)}, Id: int32(client.id)}
+	stream.Send(firstMessage)
 	//forsøger at holde liv i stream
 	for {
 		select {
@@ -62,8 +76,9 @@ func (s *Server) EstablishConnection(Empty *pb.Empty, stream pb.ChittyChat_Estab
 
 func (s *Server) Broadcast(ctx context.Context, message *pb.MessageWithLamport) (*pb.Empty, error) {
 	log.Printf("Broadcast kaldt på serveren med timestamp: %v", timestamp)
+	//skal broadcast også gøres til den der har publishet? det gør den pt.
 	for i := 0; i < len(s.clients); i++ {
-		err := s.clients[i].Send(message)
+		err := s.clients[i].stream.Send(message)
 
 		if err != nil {
 			log.Print(err)
@@ -96,11 +111,21 @@ func (s *Server) Publish(ctx context.Context, message *pb.MessageWithLamport) (*
 	return &pb.Empty{}, nil
 }
 
-func (s *Server) Leave(ctx context.Context, empty *pb.Empty) (*pb.Empty, error) {
+func (s *Server) Leave(ctx context.Context, request *pb.LeaveRequest) (*pb.Empty, error) {
+	var newArray []ChatClient
+	var clientName string
+	var id = request.GetId()
 	for i := 0; i < len(s.clients); i++ {
-		//her skal klienten fjernes, overvej at lave om på rpc definitionen, så en klients identitet på en måde kan videregives
+		if s.clients[i].id == id {
+			//Dont add to new list
+			clientName = s.clients[i].name
+		} else {
+			newArray = append(newArray, s.clients[i])
+		}
 	}
-
+	s.clients = newArray //very criminal
+	log.Printf("%v has left the building!", clientName)
+	log.Println()
 	return &pb.Empty{}, nil
 }
 
