@@ -6,9 +6,9 @@ option go_package = "./disysminiproject2";
 service ChittyChat {
     rpc Publish (MessageWithLamport) returns (Empty) {}
     rpc Broadcast (MessageWithLamport) returns (Empty) {}
-    rpc EstablishConnection (Empty) returns (stream MessageWithLamport) {}
+    rpc EstablishConnection (ConnectionRequest) returns (stream MessageWithLamport) {}
     rpc RecieveBroadcast (MessageWithLamport) returns (Empty) {}
-    rpc Leave (Empty) returns (Empty) {}
+    rpc Leave (LeaveRequest) returns (Empty) {}
 
    
 }
@@ -23,10 +23,19 @@ message Lamport {
 
 message MessageWithLamport {
     Message message = 1; 
-    Lamport time = 2; 
+    Lamport time = 2;
+    int32 Id = 3; //great feature 
 }
 
 message Empty {}
+
+message ConnectionRequest {
+    string Name = 1; 
+}
+
+message LeaveRequest {
+    int32 id = 1; 
+}
 
 
 
