@@ -1,18 +1,31 @@
 package main
 
 import (
+	"bufio"
 	"context"
+	"fmt"
+	"io"
 	"log"
 	pb "mp2/chittychat_proto"
-	"time"
+	"os"
 
+	"github.com/thecodeteam/goodbye"
 	"google.golang.org/grpc"
 )
 
-//counter til brug i lamport
-var counter int = 0
+//timestamp til brug i lamport timestamp
+var timestamp = 0
+var name string
+var id int
 
 func main() {
+	f, erro := os.OpenFile("../Logfile", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	if erro != nil {
+		log.Fatalf("Fejl")
+	}
+	defer f.Close()
+	wrt := io.MultiWriter(os.Stdout, f)
+	log.SetOutput(wrt)
 	var conn *grpc.ClientConn
 	conn, err := grpc.Dial(":8080", grpc.WithInsecure())
 	if err != nil {
@@ -23,19 +36,91 @@ func main() {
 	defer conn.Close()
 
 	//new context
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
+	ctx := context.Background()
 
 	//create the client with the connection
 	client := pb.NewChittyChatClient(conn)
-	//client.Publish(ctx, )
-	//publish message, compiler happy
-	//Publish(client)
-	var message = &pb.MessageWithLamport{Message: &pb.Message{Message: string("Hey bro")}, Time: &pb.Lamport{Counter: int32(42)}}
-	client.Publish(ctx, message)
+
+	fmt.Println("---------------")
+	fmt.Println("Welcome to ChittyChat")
+	fmt.Println("Please enter your name")
+	fmt.Println("---------------")
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	name = scanner.Text()
+
+	var request = &pb.ConnectionRequest{Name: name}
+	stream, err := client.EstablishConnection(ctx, request)
+	firstmessage, err := stream.Recv()
+	id = int(firstmessage.GetId())
+	if err != nil {
+		log.Fatalf("Klient linje 35 fejl %v", err)
+	}
+	fmt.Printf("JEG HEDDER %v OG MIT ID er %v", name, id)
+	go func() {
+		for {
+			in, err := stream.Recv()
+			if err == io.EOF {
+				return
+			}
+			if err != nil {
+				log.Fatalf("Failed to receive message %v", err)
+			}
+			RecieveBroadcast(in)
+		}
+	}()
+	fmt.Printf("You chose the name: %v", name)
+	fmt.Println()
+	fmt.Println("---------------")
+	fmt.Println("To leave the chat service, type '/leave' at any time")
+	fmt.Println("---------------")
+	//for the cmd ctrl+c stuff, from https://github.com/thecodeteam/goodbye
+	defer goodbye.Exit(ctx, -1)
+	goodbye.Notify(ctx)
+
+	goodbye.RegisterWithPriority(func(ctx context.Context, sig os.Signal) {
+		//noget
+	}, 0)
+	goodbye.RegisterWithPriority(func(ctx context.Context, sig os.Signal) {
+		//noget andet
+	}, 1)
+	goodbye.RegisterWithPriority(func(ctx context.Context, sig os.Signal) {
+		var request = &pb.LeaveRequest{Id: int32(id)}
+		client.Leave(ctx, request)
+	}, 5)
+
+	for scanner.Scan() {
+		if scanner.Text() == "/leave" {
+			var request = &pb.LeaveRequest{Id: int32(id)}
+			client.Leave(ctx, request)
+			os.Exit(0)
+		} else {
+			go Publish(ctx, client, scanner.Text())
+		}
+	}
+
 }
 
-func RecieveBroadcastClient(ctx context.Context, in *pb.MessageWithLamport) {
-	//denne metode skal kaldes fra server, når der broadcastes?
-	log.Printf("%v %v", in.GetMessage(), in.GetTime())
+func RecieveBroadcast(message *pb.MessageWithLamport) pb.Empty {
+	log.Printf("Klient har modtaget broadcast med følgende besked og timestamp: %v %v", message.GetMessage().Message, message.GetTime().Counter)
+	//update timestamp
+	timestamp = MaxInt(timestamp, int(message.GetTime().Counter))
+	log.Printf("Timestamp opdateret til: %v", timestamp)
+	return pb.Empty{}
+}
+
+func Publish(ctx context.Context, client pb.ChittyChatClient, message string) {
+	timestamp++
+	var lamportMessage = &pb.MessageWithLamport{Message: &pb.Message{Message: message}, Time: &pb.Lamport{Counter: int32(timestamp)}}
+	log.Printf("Publish kaldt hos klient med timestamp %v: ", timestamp)
+	client.Publish(ctx, lamportMessage)
+
+}
+
+//helper function
+func MaxInt(x int, y int) int {
+	if x > y {
+		return x
+	}
+	return y
 }
