@@ -9,6 +9,7 @@ import (
 	pb "mp2/chittychat_proto"
 	"os"
 
+	"github.com/thecodeteam/goodbye"
 	"google.golang.org/grpc"
 )
 
@@ -73,17 +74,29 @@ func main() {
 	fmt.Println("---------------")
 	fmt.Println("To leave the chat service, type '/leave' at any time")
 	fmt.Println("---------------")
+	//for the cmd ctrl+c stuff, from https://github.com/thecodeteam/goodbye
+	defer goodbye.Exit(ctx, -1)
+	goodbye.Notify(ctx)
+
+	goodbye.RegisterWithPriority(func(ctx context.Context, sig os.Signal) {
+		//noget
+	}, 0)
+	goodbye.RegisterWithPriority(func(ctx context.Context, sig os.Signal) {
+		//noget andet
+	}, 1)
+	goodbye.RegisterWithPriority(func(ctx context.Context, sig os.Signal) {
+		var request = &pb.LeaveRequest{Id: int32(id)}
+		client.Leave(ctx, request)
+	}, 5)
+
 	for scanner.Scan() {
 		if scanner.Text() == "/leave" {
-			//leave kald til grpc laves her
-			fmt.Println("FUCK DIN MOR, jeg skrider")
 			var request = &pb.LeaveRequest{Id: int32(id)}
 			client.Leave(ctx, request)
 			os.Exit(0)
 		} else {
 			go Publish(ctx, client, scanner.Text())
 		}
-
 	}
 
 }
