@@ -1,5 +1,8 @@
 # Mini project 2 for Distributed Systems 
-Description:
+
+# Instructions for use
+
+# Description:
 
 You have to implement Chitty-Chat a distributed system, that is providing a chatting service, and keeps track of logical time using Lamport Timestamps.
 
