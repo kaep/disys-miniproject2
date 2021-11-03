@@ -19,7 +19,7 @@ var name string
 var id int
 
 func main() {
-	f, erro := os.OpenFile("../Logfile", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	f, erro := os.OpenFile("../Logfile.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	if erro != nil {
 		log.Fatalf("Fejl")
 	}
@@ -50,17 +50,19 @@ func main() {
 	scanner.Scan()
 	name = scanner.Text()
 
-	var request = &pb.ConnectionRequest{Name: name}
+	//We want to send a message, so we increment clock
+	timestamp++
+	var request = &pb.ConnectionRequest{Name: name, Lamport: int32(timestamp)}
 	stream, err := client.EstablishConnection(ctx, request)
 	if err != nil {
 		log.Fatalf("Client error %v", err)
 	}
 	firstmessage, err := stream.Recv()
 	id = int(firstmessage.GetId())
+	timestamp = MaxInt(timestamp, int(firstmessage.Lamport))
 	if err != nil {
 		log.Fatalf("Client error %v", err)
 	}
-	//fmt.Printf("JEG HEDDER %v OG MIT ID er %v", name, id) DEBUGGING, DELETE
 	fmt.Println()
 	go func() {
 		for {
@@ -90,13 +92,13 @@ func main() {
 		//noget andet
 	}, 1)
 	goodbye.RegisterWithPriority(func(ctx context.Context, sig os.Signal) {
-		var request = &pb.LeaveRequest{Id: int32(id)}
+		var request = &pb.LeaveRequest{Id: int32(id), Lamport: int32(timestamp) + 1}
 		client.Leave(ctx, request)
 	}, 5)
 
 	for scanner.Scan() {
 		if scanner.Text() == "/leave" {
-			var request = &pb.LeaveRequest{Id: int32(id)}
+			var request = &pb.LeaveRequest{Id: int32(id), Lamport: int32(timestamp + 1)}
 			client.Leave(ctx, request)
 			conn.Close()
 			os.Exit(0)
@@ -108,14 +110,15 @@ func main() {
 }
 
 func RecieveBroadcast(message *pb.MessageWithLamport) pb.Empty {
+	timestamp = MaxInt(timestamp, int(message.GetLamport()))
 	if message.Id == int32(1337) {
-		log.Printf(message.Message)
+		var msg = fmt.Sprintf("Client %v: %v", id, message.Message)
+		log.Print(msg)
 	} else if message.Id == int32(id) {
-		log.Printf("Recieved own message '%v' at timestamp: %v", message.GetMessage(), message.GetLamport())
+		log.Printf("Client %v: Recieved own message '%v' at timestamp: %v", id, message.GetMessage(), timestamp)
 	} else {
-		log.Printf("Recieved message '%v' from client %v at timestamp: %v", message.GetMessage(), message.Id, message.GetLamport())
+		log.Printf("Client %v: Recieved message '%v' from client %v at timestamp: %v", id, message.GetMessage(), message.Id, timestamp)
 	}
-	timestamp = MaxInt(timestamp, int(message.GetLamport())) + 1
 	return pb.Empty{}
 }
 
@@ -130,6 +133,6 @@ func MaxInt(own int, recieved int) int {
 	if own >= recieved {
 		return own + 1
 	}
-	log.Printf("Client %v logical clock updated to: %v", id, recieved)
+	log.Printf("Client %v logical clock updated to: %v", id, recieved+1)
 	return recieved + 1
 }
