@@ -63,7 +63,7 @@ func (s *Server) EstablishConnection(request *pb.ConnectionRequest, stream pb.Ch
 	//Add the stream to our stored streams
 	s.clients = append(s.clients, client)
 	fmt.Printf("%v joined!", client.name)
-	var firstMessage = &pb.MessageWithLamport{Message: &pb.Message{Message: "Welcome"}, Time: &pb.Lamport{Counter: int32(timestamp)}, Id: int32(client.id)}
+	var firstMessage = &pb.MessageWithLamport{Message: "Welcome", Time: &pb.Lamport{Counter: int32(timestamp)}, Id: int32(client.id)}
 	stream.Send(firstMessage)
 	//forsøger at holde liv i stream
 	for {
@@ -105,7 +105,7 @@ func (s *Server) Publish(ctx context.Context, message *pb.MessageWithLamport) (*
 	log.Printf("Serverens timestamp incrementet til %v pga. afsendelse", timestamp)
 
 	//TJEK OP PÅ OM TIMESTAMPS OPDATERES KORREKT
-	var newMessage = &pb.MessageWithLamport{Message: &pb.Message{Message: message.GetMessage().Message}, Time: &pb.Lamport{Counter: int32(timestamp)}}
+	var newMessage = &pb.MessageWithLamport{Message: message.Message, Time: &pb.Lamport{Counter: int32(timestamp)}}
 	//log.Printf("Publish kaldt på serveren %v", newMessage.GetTime())
 	s.Broadcast(ctx, newMessage)
 	return &pb.Empty{}, nil

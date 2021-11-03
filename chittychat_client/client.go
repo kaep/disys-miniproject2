@@ -51,10 +51,13 @@ func main() {
 
 	var request = &pb.ConnectionRequest{Name: name}
 	stream, err := client.EstablishConnection(ctx, request)
+	if err != nil {
+		log.Fatalf("Client error %v", err)
+	}
 	firstmessage, err := stream.Recv()
 	id = int(firstmessage.GetId())
 	if err != nil {
-		log.Fatalf("Klient linje 35 fejl %v", err)
+		log.Fatalf("Client error %v", err)
 	}
 	fmt.Printf("JEG HEDDER %v OG MIT ID er %v", name, id)
 	go func() {
@@ -102,7 +105,7 @@ func main() {
 }
 
 func RecieveBroadcast(message *pb.MessageWithLamport) pb.Empty {
-	log.Printf("Klient har modtaget broadcast med følgende besked og timestamp: %v %v", message.GetMessage().Message, message.GetTime().Counter)
+	log.Printf("Klient har modtaget broadcast med følgende besked og timestamp: %v %v", message.GetMessage(), message.GetTime().Counter)
 	//update timestamp
 	timestamp = MaxInt(timestamp, int(message.GetTime().Counter))
 	log.Printf("Timestamp opdateret til: %v", timestamp)
@@ -111,7 +114,7 @@ func RecieveBroadcast(message *pb.MessageWithLamport) pb.Empty {
 
 func Publish(ctx context.Context, client pb.ChittyChatClient, message string) {
 	timestamp++
-	var lamportMessage = &pb.MessageWithLamport{Message: &pb.Message{Message: message}, Time: &pb.Lamport{Counter: int32(timestamp)}}
+	var lamportMessage = &pb.MessageWithLamport{Message: message, Time: &pb.Lamport{Counter: int32(timestamp)}}
 	log.Printf("Publish kaldt hos klient med timestamp %v: ", timestamp)
 	client.Publish(ctx, lamportMessage)
 
