@@ -13,17 +13,13 @@ service ChittyChat {
    
 }
 
-message Message {
-    string Message = 1; 
-}
-
 message Lamport {
     int32 Counter = 1; 
 }
 
 message MessageWithLamport {
-    Message message = 1; 
-    Lamport time = 2;
+    string Message = 1; 
+    Lamport Time = 2;
     int32 Id = 3; //great feature 
 }
 
@@ -34,7 +30,7 @@ message ConnectionRequest {
 }
 
 message LeaveRequest {
-    int32 id = 1; 
+    int32 Id = 1; 
 }
 
 
