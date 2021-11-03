@@ -97,6 +97,7 @@ func main() {
 		if scanner.Text() == "/leave" {
 			var request = &pb.LeaveRequest{Id: int32(id)}
 			client.Leave(ctx, request)
+			conn.Close()
 			os.Exit(0)
 		} else {
 			go Publish(ctx, client, scanner.Text())
@@ -106,8 +107,13 @@ func main() {
 }
 
 func RecieveBroadcast(message *pb.MessageWithLamport) pb.Empty {
-	log.Printf("Client %v recieved message '%v' at timestamp: %v", id, message.GetMessage(), message.GetTime().Counter)
-	//update timestamp
+	if message.Id == int32(1337) {
+		log.Printf(message.Message)
+	} else if message.Id == int32(id) {
+		log.Printf("Recieved own message '%v' at timestamp: %v", message.GetMessage(), message.GetTime().Counter)
+	} else {
+		log.Printf("Recieved message '%v' from client %v at timestamp: %v", message.GetMessage(), message.Id, message.GetTime().Counter)
+	}
 	timestamp = MaxInt(timestamp, int(message.GetTime().Counter))
 	return pb.Empty{}
 }
