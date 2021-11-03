@@ -8,6 +8,7 @@ import (
 	"log"
 	pb "mp2/chittychat_proto"
 	"os"
+	"time"
 
 	"github.com/thecodeteam/goodbye"
 	"google.golang.org/grpc"
@@ -27,7 +28,8 @@ func main() {
 	wrt := io.MultiWriter(os.Stdout, f)
 	log.SetOutput(wrt)
 	var conn *grpc.ClientConn
-	conn, err := grpc.Dial(":8080", grpc.WithInsecure())
+	log.Print("Trying to connect to ChittyChat")
+	conn, err := grpc.Dial(":8080", grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(5*time.Second))
 	if err != nil {
 		log.Fatalf("Could not connect: %s", err)
 	}
