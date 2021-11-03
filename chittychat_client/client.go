@@ -60,6 +60,7 @@ func main() {
 		log.Fatalf("Client error %v", err)
 	}
 	fmt.Printf("JEG HEDDER %v OG MIT ID er %v", name, id)
+	fmt.Println()
 	go func() {
 		for {
 			in, err := stream.Recv()
