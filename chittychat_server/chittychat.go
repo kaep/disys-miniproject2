@@ -65,14 +65,14 @@ func (s *Server) EstablishConnection(request *pb.ConnectionRequest, stream pb.Ch
 	s.clients = append(s.clients, client)
 
 	//Send the id to client, so that it knows of it
-	var firstMessage = &pb.MessageWithLamport{Message: "Welcome", Time: &pb.Lamport{Counter: int32(timestamp)}, Id: int32(client.id)}
-	stream.Send(firstMessage) //HUSK AT INCREMENTE LAMPORT HER!!!!! right?
+	var firstMessage = &pb.MessageWithLamport{Message: "Welcome", Lamport: int32(timestamp + 1), Id: int32(client.id)} //increment lamport before sending
+	stream.Send(firstMessage)
 
 	//Broadcast that the new participant joined
 	var formattedMessage = fmt.Sprintf("'%v' just joined the server at time %v", client.name, timestamp)
 	var joinMessage = &pb.MessageWithLamport{
 		Message: formattedMessage,
-		Time:    &pb.Lamport{Counter: int32(timestamp)},
+		Lamport: int32(timestamp),
 		Id:      1337, //Magic number, not good
 	}
 	s.Broadcast(stream.Context(), joinMessage)
@@ -100,14 +100,14 @@ func (s *Server) Broadcast(ctx context.Context, message *pb.MessageWithLamport) 
 }
 
 func (s *Server) Publish(ctx context.Context, message *pb.MessageWithLamport) (*pb.Empty, error) {
-	log.Printf("Publish called by client %v with local timestamp %v: ", message.GetId(), message.GetTime())
-	//update timestamp if the recieved one is bigger
-	timestamp = MaxInt(timestamp, int(message.GetTime().Counter))
+	log.Printf("Publish called by client %v with local timestamp %v: ", message.GetId(), message.GetLamport())
+	//update timestamp
+	timestamp = MaxInt(timestamp, int(message.GetLamport()))
 	//increment own timestamp before message is sent (call to Broadcast() = local event)
 	timestamp++
 	log.Printf("Logical clock on server incremented because of call to Publish()")
 
-	var newMessage = &pb.MessageWithLamport{Message: message.Message, Time: &pb.Lamport{Counter: int32(timestamp)}, Id: message.Id}
+	var newMessage = &pb.MessageWithLamport{Message: message.Message, Lamport: int32(timestamp), Id: message.Id}
 	s.Broadcast(ctx, newMessage)
 	return &pb.Empty{}, nil
 }
@@ -132,7 +132,7 @@ func (s *Server) Leave(ctx context.Context, request *pb.LeaveRequest) (*pb.Empty
 	var formattedMessage = fmt.Sprintf("XXXXX '%v' just left the server at time %v XXXXX", clientName, timestamp)
 	var leaveMessage = &pb.MessageWithLamport{
 		Message: formattedMessage,
-		Time:    &pb.Lamport{Counter: int32(timestamp)},
+		Lamport: int32(timestamp),
 		Id:      1337, //Magic number, not good
 	}
 	s.Broadcast(ctx, leaveMessage)
@@ -142,8 +142,8 @@ func (s *Server) Leave(ctx context.Context, request *pb.LeaveRequest) (*pb.Empty
 //helper function
 func MaxInt(own int, recieved int) int {
 	if own >= recieved {
-		return own
+		return own + 1
 	}
 	log.Printf("Servers logical clock updated to: %v", recieved)
-	return recieved
+	return recieved + 1
 }

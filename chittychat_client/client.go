@@ -14,7 +14,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-//timestamp til brug i lamport timestamp
 var timestamp = 0
 var name string
 var id int
@@ -112,25 +111,25 @@ func RecieveBroadcast(message *pb.MessageWithLamport) pb.Empty {
 	if message.Id == int32(1337) {
 		log.Printf(message.Message)
 	} else if message.Id == int32(id) {
-		log.Printf("Recieved own message '%v' at timestamp: %v", message.GetMessage(), message.GetTime().Counter)
+		log.Printf("Recieved own message '%v' at timestamp: %v", message.GetMessage(), message.GetLamport())
 	} else {
-		log.Printf("Recieved message '%v' from client %v at timestamp: %v", message.GetMessage(), message.Id, message.GetTime().Counter)
+		log.Printf("Recieved message '%v' from client %v at timestamp: %v", message.GetMessage(), message.Id, message.GetLamport())
 	}
-	timestamp = MaxInt(timestamp, int(message.GetTime().Counter))
+	timestamp = MaxInt(timestamp, int(message.GetLamport())) + 1
 	return pb.Empty{}
 }
 
 func Publish(ctx context.Context, client pb.ChittyChatClient, message string) {
 	timestamp++
-	var lamportMessage = &pb.MessageWithLamport{Message: message, Time: &pb.Lamport{Counter: int32(timestamp)}, Id: int32(id)}
+	var lamportMessage = &pb.MessageWithLamport{Message: message, Lamport: int32(timestamp), Id: int32(id)}
 	client.Publish(ctx, lamportMessage)
 }
 
 //helper function
 func MaxInt(own int, recieved int) int {
 	if own >= recieved {
-		return own
+		return own + 1
 	}
 	log.Printf("Client %v logical clock updated to: %v", id, recieved)
-	return recieved
+	return recieved + 1
 }
