@@ -3,8 +3,9 @@
 # Instructions for use
 1. Open a terminal in disys-miniproject2\chittychat_server and type "go run ."
 2. Open a terminal in disys-miniproject2\chittychat_client and type "go run ."
-3. Follow the instructions in the terminal window running the client 
-4. Inspect logs in disys-miniproject2\Logfile.txt
+3. Repeat step 2 in as many different terminals as you want clients
+4. Follow the instructions in the terminal window running the client(s)
+5. Inspect logs in disys-miniproject2\Logfile.txt
 
 # Description:
 
