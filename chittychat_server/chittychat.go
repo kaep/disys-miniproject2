@@ -76,16 +76,12 @@ func (s *Server) EstablishConnection(request *pb.ConnectionRequest, stream pb.Ch
 
 func (s *Server) Broadcast(ctx context.Context, message *pb.MessageWithLamport) (*pb.Empty, error) {
 	log.Printf("Broadcast kaldt på serveren med timestamp: %v", timestamp)
-	//skal broadcast også gøres til den der har publishet? det gør den pt.
 	for i := 0; i < len(s.clients); i++ {
 		err := s.clients[i].stream.Send(message)
-
 		if err != nil {
 			log.Print(err)
-			//atm an error is logged everytime the server tries to broadcast to a client that has left -> make a leave method
 		}
 	}
-
 	return &pb.Empty{}, nil
 }
 
