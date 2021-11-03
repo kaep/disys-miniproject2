@@ -68,7 +68,7 @@ func main() {
 				return
 			}
 			if err != nil {
-				log.Fatalf("Failed to receive message %v", err)
+				log.Fatalf("Failed to recieve message %v", err)
 			}
 			RecieveBroadcast(in)
 		}
@@ -115,16 +115,15 @@ func RecieveBroadcast(message *pb.MessageWithLamport) pb.Empty {
 
 func Publish(ctx context.Context, client pb.ChittyChatClient, message string) {
 	timestamp++
-	var lamportMessage = &pb.MessageWithLamport{Message: message, Time: &pb.Lamport{Counter: int32(timestamp)}}
-	log.Printf("Publish kaldt hos klient med timestamp %v: ", timestamp)
+	var lamportMessage = &pb.MessageWithLamport{Message: message, Time: &pb.Lamport{Counter: int32(timestamp)}, Id: int32(id)}
 	client.Publish(ctx, lamportMessage)
-
 }
 
 //helper function
-func MaxInt(x int, y int) int {
-	if x > y {
-		return x
+func MaxInt(own int, recieved int) int {
+	if own > recieved {
+		return own
 	}
-	return y
+	log.Printf("Logical clock updated to: %v", recieved)
+	return recieved
 }

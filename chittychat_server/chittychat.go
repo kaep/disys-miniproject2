@@ -86,13 +86,10 @@ func (s *Server) Broadcast(ctx context.Context, message *pb.MessageWithLamport) 
 }
 
 func (s *Server) Publish(ctx context.Context, message *pb.MessageWithLamport) (*pb.Empty, error) {
-	//debugging
-	//fmt.Printf("Publish kaldt på serveren: %v %v", message.GetMessage(), message.GetTime())
-	//fmt.Println()
-	log.Printf("Publish kaldt på server med timestamp: %v", message.GetTime().Counter)
+	log.Printf("Publish called by client %v with local timestamp %v: ", message.GetId(), message.GetTime())
+
 	//update timestamp
 	timestamp = MaxInt(timestamp, int(message.GetTime().Counter))
-	log.Printf("Serverens timestamp opdateret til: %v", timestamp)
 	//increment timestamp (modtagelse)
 	timestamp++
 	log.Printf("Serverens timestamp incrementet til %v pga. modtagelse ", timestamp)
@@ -126,9 +123,10 @@ func (s *Server) Leave(ctx context.Context, request *pb.LeaveRequest) (*pb.Empty
 }
 
 //helper function
-func MaxInt(x int, y int) int {
-	if x > y {
-		return x
+func MaxInt(own int, recieved int) int {
+	if own > recieved {
+		return own
 	}
-	return y
+	log.Printf("Servers logical clock updated to: %v", recieved)
+	return recieved
 }
