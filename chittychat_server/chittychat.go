@@ -34,7 +34,7 @@ func main() {
 	os.Remove("../Logfile") //Delete the file to ensure a fresh log for every session
 	f, erro := os.OpenFile("../Logfile", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	if erro != nil {
-		log.Fatalf("Fejl")
+		log.Fatalf("Logfile error")
 	}
 	defer f.Close()
 	wrt := io.MultiWriter(os.Stdout, f)
@@ -57,7 +57,7 @@ func main() {
 func (s *Server) EstablishConnection(request *pb.ConnectionRequest, stream pb.ChittyChat_EstablishConnectionServer) error {
 	var client ChatClient
 	client.id = int32(idCounter)
-	log.Printf("Client with name %v and id %v just joined at time: %v", request.Name, idCounter, timestamp)
+	log.Printf("Client with name '%v' and id %v just joined at time: %v", request.Name, idCounter, timestamp)
 	idCounter++
 	client.name = request.Name
 	client.stream = stream
@@ -69,11 +69,11 @@ func (s *Server) EstablishConnection(request *pb.ConnectionRequest, stream pb.Ch
 	stream.Send(firstMessage) //HUSK AT INCREMENTE LAMPORT HER!!!!! right?
 
 	//Broadcast that the new participant joined
-	var formattedMessage = fmt.Sprintf("%v just joined the server at time %v", client.name, timestamp)
+	var formattedMessage = fmt.Sprintf("'%v' just joined the server at time %v", client.name, timestamp)
 	var joinMessage = &pb.MessageWithLamport{
 		Message: formattedMessage,
 		Time:    &pb.Lamport{Counter: int32(timestamp)},
-		//Id is left out
+		Id:      1337, //Magic number, not good
 	}
 	s.Broadcast(stream.Context(), joinMessage)
 
@@ -88,7 +88,7 @@ func (s *Server) EstablishConnection(request *pb.ConnectionRequest, stream pb.Ch
 
 func (s *Server) Broadcast(ctx context.Context, message *pb.MessageWithLamport) (*pb.Empty, error) {
 	timestamp++
-	log.Printf("Logical clock incremented because of call to Broadcast()")
+	log.Printf("Logical clock on server incremented because of call to Broadcast()")
 	log.Printf("Broadcast called on the server at time: %v", timestamp)
 	for i := 0; i < len(s.clients); i++ {
 		err := s.clients[i].stream.Send(message)
@@ -101,19 +101,20 @@ func (s *Server) Broadcast(ctx context.Context, message *pb.MessageWithLamport) 
 
 func (s *Server) Publish(ctx context.Context, message *pb.MessageWithLamport) (*pb.Empty, error) {
 	log.Printf("Publish called by client %v with local timestamp %v: ", message.GetId(), message.GetTime())
-	//update timestamp
+	//update timestamp if the recieved one is bigger
 	timestamp = MaxInt(timestamp, int(message.GetTime().Counter))
+	//increment own timestamp before message is sent
 	timestamp++
-	log.Printf("Logical clock incremented because of call to Publish()")
+	log.Printf("Logical clock on server incremented because of call to Publish()")
 
-	var newMessage = &pb.MessageWithLamport{Message: message.Message, Time: &pb.Lamport{Counter: int32(timestamp)}}
+	var newMessage = &pb.MessageWithLamport{Message: message.Message, Time: &pb.Lamport{Counter: int32(timestamp)}, Id: message.Id}
 	s.Broadcast(ctx, newMessage)
 	return &pb.Empty{}, nil
 }
 
 func (s *Server) Leave(ctx context.Context, request *pb.LeaveRequest) (*pb.Empty, error) {
 	timestamp++
-	log.Printf("Logical clock incremented because of call to Leave()")
+	log.Printf("Logical clock on server incremented because of call to Leave()")
 	var newArray []ChatClient
 	var clientName string
 	var id = request.GetId()
@@ -127,14 +128,14 @@ func (s *Server) Leave(ctx context.Context, request *pb.LeaveRequest) (*pb.Empty
 	}
 	s.clients = newArray //Smoothest way of updating the array
 	log.Printf("X-X-X-X-X-X-X-X-X-X-X-X-X-X-X\n")
-	log.Printf("%v has left the building! (at time %v) \n", clientName, timestamp)
+	log.Printf("'%v' has left the building! (at time %v) \n", clientName, timestamp)
 	log.Printf("X-X-X-X-X-X-X-X-X-X-X-X-X-X-X\n")
 	//Broadcast that the client has left
-	var formattedMessage = fmt.Sprintf("%v just left the server at time %v", clientName, timestamp)
+	var formattedMessage = fmt.Sprintf("XXXXX '%v' just left the server at time %v XXXXX", clientName, timestamp)
 	var leaveMessage = &pb.MessageWithLamport{
 		Message: formattedMessage,
 		Time:    &pb.Lamport{Counter: int32(timestamp)},
-		//Id is left out
+		Id:      1337, //Magic number, not good
 	}
 	s.Broadcast(ctx, leaveMessage)
 	return &pb.Empty{}, nil
