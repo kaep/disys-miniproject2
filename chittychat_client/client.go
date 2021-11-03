@@ -59,7 +59,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Client error %v", err)
 	}
-	fmt.Printf("JEG HEDDER %v OG MIT ID er %v", name, id)
+	//fmt.Printf("JEG HEDDER %v OG MIT ID er %v", name, id) DEBUGGING, DELETE
 	fmt.Println()
 	go func() {
 		for {
@@ -106,10 +106,9 @@ func main() {
 }
 
 func RecieveBroadcast(message *pb.MessageWithLamport) pb.Empty {
-	log.Printf("Klient har modtaget broadcast med følgende besked og timestamp: %v %v", message.GetMessage(), message.GetTime().Counter)
+	log.Printf("Client %v recieved message '%v' at timestamp: %v", id, message.GetMessage(), message.GetTime().Counter)
 	//update timestamp
 	timestamp = MaxInt(timestamp, int(message.GetTime().Counter))
-	log.Printf("Timestamp opdateret til: %v", timestamp)
 	return pb.Empty{}
 }
 
@@ -121,9 +120,9 @@ func Publish(ctx context.Context, client pb.ChittyChatClient, message string) {
 
 //helper function
 func MaxInt(own int, recieved int) int {
-	if own > recieved {
+	if own >= recieved {
 		return own
 	}
-	log.Printf("Logical clock updated to: %v", recieved)
+	log.Printf("Client %v logical clock updated to: %v", id, recieved)
 	return recieved
 }
