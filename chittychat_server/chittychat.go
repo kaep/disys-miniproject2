@@ -103,7 +103,7 @@ func (s *Server) Publish(ctx context.Context, message *pb.MessageWithLamport) (*
 	log.Printf("Publish called by client %v with local timestamp %v: ", message.GetId(), message.GetTime())
 	//update timestamp if the recieved one is bigger
 	timestamp = MaxInt(timestamp, int(message.GetTime().Counter))
-	//increment own timestamp before message is sent
+	//increment own timestamp before message is sent (call to Broadcast() = local event)
 	timestamp++
 	log.Printf("Logical clock on server incremented because of call to Publish()")
 
@@ -127,9 +127,7 @@ func (s *Server) Leave(ctx context.Context, request *pb.LeaveRequest) (*pb.Empty
 		}
 	}
 	s.clients = newArray //Smoothest way of updating the array
-	log.Printf("X-X-X-X-X-X-X-X-X-X-X-X-X-X-X\n")
-	log.Printf("'%v' has left the building! (at time %v) \n", clientName, timestamp)
-	log.Printf("X-X-X-X-X-X-X-X-X-X-X-X-X-X-X\n")
+	log.Printf("XXXXX '%v' has left the building! (at time %v) XXXXX \n", clientName, timestamp)
 	//Broadcast that the client has left
 	var formattedMessage = fmt.Sprintf("XXXXX '%v' just left the server at time %v XXXXX", clientName, timestamp)
 	var leaveMessage = &pb.MessageWithLamport{
