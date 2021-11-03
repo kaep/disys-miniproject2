@@ -46,8 +46,8 @@ func main() {
 	}
 	server := grpc.NewServer()
 	pb.RegisterChittyChatServer(server, &Server{})
-	log.Printf("Server listening at %v", listen.Addr())
-	log.Println()
+	log.Printf("ChittyChat server listening on %v", listen.Addr())
+	log.Println("---------------")
 	if err := server.Serve(listen); err != nil {
 		log.Printf("Failed to serve: %v", err)
 		log.Println() //overvej at droppe tomme linjer
@@ -57,15 +57,27 @@ func main() {
 func (s *Server) EstablishConnection(request *pb.ConnectionRequest, stream pb.ChittyChat_EstablishConnectionServer) error {
 	var client ChatClient
 	client.id = int32(idCounter)
+	log.Printf("Client with name %v and id %v just joined at time: %v", request.Name, idCounter, timestamp)
 	idCounter++
 	client.name = request.Name
 	client.stream = stream
-	//Add the stream to our stored streams
+	//Add the stream to the array of stored streams
 	s.clients = append(s.clients, client)
-	fmt.Printf("%v joined!", client.name)
+
+	//Send the id to client, so that it knows of it
 	var firstMessage = &pb.MessageWithLamport{Message: "Welcome", Time: &pb.Lamport{Counter: int32(timestamp)}, Id: int32(client.id)}
-	stream.Send(firstMessage)
-	//forsøger at holde liv i stream
+	stream.Send(firstMessage) //HUSK AT INCREMENTE LAMPORT HER!!!!! right?
+
+	//Broadcast that the new participant joined
+	var formattedMessage = fmt.Sprintf("%v just joined the server at time %v", client.name, timestamp)
+	var joinMessage = &pb.MessageWithLamport{
+		Message: formattedMessage,
+		Time:    &pb.Lamport{Counter: int32(timestamp)},
+		//Id is left out
+	}
+	s.Broadcast(stream.Context(), joinMessage)
+
+	//Keep the stream "alive"
 	for {
 		select {
 		case <-stream.Context().Done():
@@ -75,7 +87,9 @@ func (s *Server) EstablishConnection(request *pb.ConnectionRequest, stream pb.Ch
 }
 
 func (s *Server) Broadcast(ctx context.Context, message *pb.MessageWithLamport) (*pb.Empty, error) {
-	log.Printf("Broadcast kaldt på serveren med timestamp: %v", timestamp)
+	timestamp++
+	log.Printf("Logical clock incremented because of call to Broadcast()")
+	log.Printf("Broadcast called on the server at time: %v", timestamp)
 	for i := 0; i < len(s.clients); i++ {
 		err := s.clients[i].stream.Send(message)
 		if err != nil {
@@ -87,24 +101,19 @@ func (s *Server) Broadcast(ctx context.Context, message *pb.MessageWithLamport) 
 
 func (s *Server) Publish(ctx context.Context, message *pb.MessageWithLamport) (*pb.Empty, error) {
 	log.Printf("Publish called by client %v with local timestamp %v: ", message.GetId(), message.GetTime())
-
 	//update timestamp
 	timestamp = MaxInt(timestamp, int(message.GetTime().Counter))
-	//increment timestamp (modtagelse)
 	timestamp++
-	log.Printf("Serverens timestamp incrementet til %v pga. modtagelse ", timestamp)
-	//increment timestamp (afsendelse)
-	timestamp++
-	log.Printf("Serverens timestamp incrementet til %v pga. afsendelse", timestamp)
+	log.Printf("Logical clock incremented because of call to Publish()")
 
-	//TJEK OP PÅ OM TIMESTAMPS OPDATERES KORREKT
 	var newMessage = &pb.MessageWithLamport{Message: message.Message, Time: &pb.Lamport{Counter: int32(timestamp)}}
-	//log.Printf("Publish kaldt på serveren %v", newMessage.GetTime())
 	s.Broadcast(ctx, newMessage)
 	return &pb.Empty{}, nil
 }
 
 func (s *Server) Leave(ctx context.Context, request *pb.LeaveRequest) (*pb.Empty, error) {
+	timestamp++
+	log.Printf("Logical clock incremented because of call to Leave()")
 	var newArray []ChatClient
 	var clientName string
 	var id = request.GetId()
@@ -116,15 +125,24 @@ func (s *Server) Leave(ctx context.Context, request *pb.LeaveRequest) (*pb.Empty
 			newArray = append(newArray, s.clients[i])
 		}
 	}
-	s.clients = newArray //very criminal
-	log.Printf("%v has left the building!", clientName)
-	log.Println()
+	s.clients = newArray //Smoothest way of updating the array
+	log.Printf("X-X-X-X-X-X-X-X-X-X-X-X-X-X-X\n")
+	log.Printf("%v has left the building! (at time %v) \n", clientName, timestamp)
+	log.Printf("X-X-X-X-X-X-X-X-X-X-X-X-X-X-X\n")
+	//Broadcast that the client has left
+	var formattedMessage = fmt.Sprintf("%v just left the server at time %v", clientName, timestamp)
+	var leaveMessage = &pb.MessageWithLamport{
+		Message: formattedMessage,
+		Time:    &pb.Lamport{Counter: int32(timestamp)},
+		//Id is left out
+	}
+	s.Broadcast(ctx, leaveMessage)
 	return &pb.Empty{}, nil
 }
 
 //helper function
 func MaxInt(own int, recieved int) int {
-	if own > recieved {
+	if own >= recieved {
 		return own
 	}
 	log.Printf("Servers logical clock updated to: %v", recieved)
